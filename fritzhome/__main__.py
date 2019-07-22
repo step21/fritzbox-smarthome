@@ -44,7 +44,7 @@ def actors(context):
 
     for actor in fritz.get_actors():
         click.echo("{} ({} {}; AIN {} )".format(
-            actor.name,
+            actor.name.encode('utf-8'),
             actor.manufacturer,
             actor.productname,
             actor.actor_id,
@@ -165,7 +165,7 @@ def switch_on(context, ain):
     context.obj.login()
     actor = context.obj.get_actor_by_ain(ain)
     if actor:
-        click.echo("Switching {} on".format(actor.name))
+        click.echo("Switching {} on".format(actor.name.encode('utf-8')))
         actor.switch_on()
     else:
         click.echo("Actor not found: {}".format(ain))
@@ -179,7 +179,7 @@ def switch_off(context, ain):
     context.obj.login()
     actor = context.obj.get_actor_by_ain(ain)
     if actor:
-        click.echo("Switching {} off".format(actor.name))
+        click.echo("Switching {} off".format(actor.name.encode('utf-8')))
         actor.switch_off()
     else:
         click.echo("Actor not found: {}".format(ain))
@@ -212,6 +212,21 @@ def switch_toggle(context, ain):
         else:
             actor.switch_on()
             click.echo("State for {} is now ON".format(ain))
+    else:
+        click.echo("Actor not found: {}".format(ain))
+
+
+@cli.command(name="set-temp")
+@click.argument('ain')
+@click.argument('temperature')
+@click.pass_context
+def switch_toggle(context, ain, temperature):
+    """Set the actor's temprature"""
+    context.obj.login()
+    actor = context.obj.get_actor_by_ain(ain)
+    if actor:
+        actor.set_temperature(int(temperature))
+        click.echo("Temperature for {} ({}) is now {}".format(actor.name.encode('utf-8'), ain,temperature))
     else:
         click.echo("Actor not found: {}".format(ain))
 
