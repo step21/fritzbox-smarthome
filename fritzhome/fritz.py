@@ -39,7 +39,7 @@ class FritzBox(object):
      nice 403 errors.
     """
 
-    def __init__(self, ip, username, password, use_tls=False):
+    def __init__(self, ip, username, password, use_tls=False, tls_cert_path=''):
         if use_tls:
             self.base_url = 'https://' + ip
         else:
@@ -47,6 +47,7 @@ class FritzBox(object):
         self.username = username
         self.password = password
         self.sid = None
+        self.tls_cert_path = tls_cert_path
 
         self.session = Session()
 
@@ -59,12 +60,12 @@ class FritzBox(object):
           other users.
         - SIDs expire after some time
         """
-        response = self.session.get(self.base_url + '/login_sid.lua', timeout=10)
+        response = self.session.get(self.base_url + '/login_sid.lua', verify=self.tls_cert_path, timeout=10)
         xml = ET.fromstring(response.text)
         if xml.find('SID').text == "0000000000000000":
             challenge = xml.find('Challenge').text
             url = self.base_url + "/login_sid.lua"
-            response = self.session.get(url, params={
+            response = self.session.get(url, verify=self.tls_cert_path, params={
                 "username": self.username,
                 "response": self.calculate_response(challenge, self.password),
             }, timeout=10)
@@ -133,7 +134,7 @@ class FritzBox(object):
             params['ain'] = ain
 
         url = self.base_url + '/webservices/homeautoswitch.lua'
-        response = self.session.get(url, params=params, timeout=10)
+        response = self.session.get(url, verify=self.tls_cert_path, params=params, timeout=10)
         response.raise_for_status()
         return response.text.strip().encode('utf-8')
 
@@ -192,7 +193,7 @@ class FritzBox(object):
         Deprecated, use get_actors instead.
         """
         url = self.base_url + '/net/home_auto_query.lua'
-        response = self.session.get(url, params={
+        response = self.session.get(url, verify=self.tls_cert_path, params={
             'sid': self.sid,
             'command': 'AllOutletStates',
             'xhr': 0,
@@ -225,7 +226,7 @@ class FritzBox(object):
             )
 
         url = self.base_url + "/net/home_auto_query.lua"
-        response = self.session.get(url, params={
+        response = self.session.get(url, verify=self.tls_cert_path, params={
             'sid': self.sid,
             'command': 'EnergyStats_{0}'.format(timerange),
             'id': deviceid,
@@ -274,7 +275,7 @@ class FritzBox(object):
         assert BeautifulSoup, "Please install bs4 to use this method"
 
         url = self.base_url + "/system/syslog.lua"
-        response = self.session.get(url, params={
+        response = self.session.get(url, verify=self.tls_cert_path, params={
             'sid': self.sid,
             'stylemode': 'print',
         }, timeout=15)
